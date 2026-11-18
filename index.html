@@ -1,0 +1,504 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' blob: mediastream:; connect-src 'self' ws://127.0.0.1:8765 https://0.peerjs.com wss://0.peerjs.com; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>StarControl</title><meta name="theme-color" content="#0d0405">
+<link rel="manifest" href="manifest.json"><link rel="apple-touch-icon" href="assets/apple-touch-icon.png"><link rel="icon" type="image/png" href="assets/favicon.png">
+<style>
+*{box-sizing:border-box}[hidden]{display:none!important}
+body{margin:0;font:16px system-ui,sans-serif;background:#0d0405;color:#f6ecec}
+header{display:flex;justify-content:space-between;align-items:center;padding:16px 24px;border-bottom:1px solid #3a1218}
+h1{margin:0;font-size:1.4rem}h2{margin-top:0}
+.tag{background:#3a1218;padding:4px 12px;border-radius:99px;font-size:.8rem}
+main{max-width:980px;margin:0 auto;padding:24px;display:grid;gap:24px}
+section{background:#1a0709;border:1px solid #3a1218;border-radius:16px;padding:20px}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px}
+.card{background:#240b0f;border:2px solid transparent;border-radius:14px;padding:18px;text-align:center}
+.card.hl{border-color:#ff3b47;box-shadow:0 0 24px #ff3b4755}
+.btn,button{font:inherit;color:#fff;background:#d4141f;border:0;border-radius:12px;padding:12px 18px;cursor:pointer;text-decoration:none;display:inline-block;margin:4px}
+.btn{font-weight:700;font-size:1.05rem;padding:16px 22px}.btn.alt,button.alt{background:#3b161c}
+button:active{filter:brightness(1.3)}
+.mini{display:inline-block;font-size:.85rem;color:#ff8a8a;margin:6px 8px 0}
+.qr{margin:14px auto;background:#fff;padding:8px;border-radius:10px;width:max-content}.qr img{display:block}
+.pair{display:flex;gap:24px;flex-wrap:wrap;align-items:center;justify-content:space-between}
+.code{font:700 3rem ui-monospace,monospace;letter-spacing:.3em;color:#ff8a8a}.status{color:#ffd166}
+#preview{width:100%;max-height:50vh;margin-top:14px;border-radius:10px;background:#000}
+#codein{font:inherit;font-size:1.4rem;text-align:center;width:100%;padding:12px;border-radius:12px;border:1px solid #3b161c;background:#0d0405;color:#fff;margin-bottom:8px}
+#ctl{position:fixed;inset:0;background:#000;display:flex;flex-direction:column;z-index:10;touch-action:none}
+#ctl nav{display:flex;gap:4px;padding:4px;background:#1a0709}#ctl nav button{flex:1;margin:0;padding:8px;background:#3b161c}
+#ctl nav button.on{background:#d4141f}
+.tab{flex:1;position:relative;overflow:hidden;min-height:0}
+#stage,#vid{width:100%;height:100%}#vid{object-fit:contain;background:#000;transform-origin:center}
+#pad{position:absolute;inset:0 0 70px;margin:8px;border:2px dashed #3b161c;border-radius:16px;display:grid;place-items:center;text-align:center;padding:16px;color:#b08a8e;touch-action:none}
+.keys{position:absolute;left:0;right:0;bottom:0;display:flex;flex-wrap:wrap;justify-content:center}.keys button{padding:10px 12px;margin:2px}
+button.on{background:#ffb020}
+#kbin{position:fixed;left:0;bottom:0;width:1px;height:1px;opacity:0;border:0}
+#apps{padding:12px;display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px;overflow:auto;height:100%;align-content:start}.approw{background:#240b0f;border-radius:12px;padding:8px;display:flex;flex-direction:column;gap:4px}.approw b{font-size:.9rem}.approw div{display:flex;gap:4px}.approw button{flex:1;margin:0;padding:8px;background:#3b161c}
+.agent-on{color:#3ddc84;font-weight:700}.agent-off{color:#ff6b6b}
+#kbfloat{position:absolute;right:14px;bottom:14px;z-index:5;border-radius:50px;padding:14px 20px;box-shadow:0 4px 18px #000a}
+#qk{position:fixed;left:0;right:0;bottom:0;z-index:30;display:flex;gap:4px;padding:4px;background:#1a0709;overflow-x:auto}#qk button{margin:0;padding:10px 12px;white-space:nowrap;background:#3b161c}
+#stick{position:absolute;left:6%;top:50%;margin-top:-80px;width:160px;height:160px;border-radius:50%;background:#240b0f;border:2px solid #3b161c;touch-action:none}
+#knob{position:absolute;left:50px;top:50px;width:60px;height:60px;border-radius:50%;background:#ff3b47;pointer-events:none}
+#btns{position:absolute;right:5%;top:50%;margin-top:-90px;display:grid;grid-template-columns:repeat(3,76px);gap:12px}
+.ab{width:76px;height:76px;border-radius:50%;padding:0;margin:0;background:#3b161c;touch-action:none;user-select:none}
+.gear{position:absolute;top:6px;left:50%;transform:translateX(-50%)}
+dialog{background:#1a0709;color:#fff;border:1px solid #3b161c;border-radius:14px;max-height:90vh;overflow:auto}
+dialog label{display:flex;justify-content:space-between;gap:12px;margin:6px 0}dialog select{font:inherit}
+.scanv{position:fixed;inset:0;width:100%;height:100%;object-fit:cover;z-index:20;background:#000}
+#gp{position:absolute;inset:0;pointer-events:none;z-index:4}#gp>*{pointer-events:auto}
+#stick{top:auto;margin:0;bottom:7%;left:4%;opacity:.8}
+#btns{top:auto;margin:0;bottom:7%;right:4%;grid-template-columns:repeat(3,64px);gap:10px}
+.ab{width:64px;height:64px;font-size:.75rem;opacity:.8}
+#side{position:absolute;left:3%;top:22%;display:flex;flex-direction:column;gap:8px}
+.sk{width:56px;height:38px;border-radius:12px;padding:0;margin:0;background:#3b161ccc;touch-action:none;user-select:none;font-size:.8rem}
+#fbar{position:absolute;top:6px;left:50%;transform:translateX(-50%);z-index:6;display:flex;gap:4px;align-items:center;background:#1a0709d9;padding:4px;border-radius:30px}
+#fbtns{display:flex;gap:4px}#fbar button{margin:0;padding:8px 12px;border-radius:20px;background:#3b161c;font-size:.85rem}
+#fbar #kbfloat{position:static;box-shadow:none}#fbar button.on{background:#d4141f}
+#qual{font:inherit;padding:10px;border-radius:12px;background:#240b0f;color:#fff;border:1px solid #3b161c;margin:4px}
+#hud{position:absolute;left:8px;top:6px;z-index:6;font:11px ui-monospace,monospace;background:#000a;color:#9f9;padding:2px 8px;border-radius:6px;pointer-events:none}
+h1{display:flex;align-items:center;gap:10px}h1 img{width:40px;height:40px;border-radius:10px}
+body{background:radial-gradient(circle at 0 0,#4a0509 0,#0d0405 55%) fixed #0d0405}
+.cc{position:absolute;touch-action:none;user-select:none;-webkit-user-select:none}
+.cc.btn{border-radius:16px;background:#3b161ccc;border:2px solid #ff3b4766;color:#fff;display:grid;place-items:center;font-weight:700;text-align:center;overflow:hidden}
+.cc.stick{border-radius:50%;background:#240b0fcc;border:2px solid #3b161c}
+.cc.stick .knob{position:absolute;left:50%;top:50%;width:42%;height:42%;margin:-21% 0 0 -21%;border-radius:50%;background:#ff3b47;pointer-events:none}
+.cc.on{background:#ffb020cc;color:#000}
+#gp.edit .cc{outline:2px dashed #ffb020;outline-offset:2px}
+#ebar{position:absolute;top:46px;left:50%;transform:translateX(-50%);z-index:6;display:flex;gap:4px;flex-wrap:wrap;justify-content:center;background:#1a0709e6;padding:4px;border-radius:14px}
+#ebar button{margin:0;padding:8px 10px;font-size:.8rem;border-radius:14px;background:#3b161c}#ebar button.on{background:#d4141f}
+#fm{position:absolute;left:58%;top:30%;width:116px;z-index:5;background:#1a0709e0;border:2px solid #3b161c;border-radius:34px 34px 46px 46px;padding:6px;touch-action:none;user-select:none;display:flex;flex-direction:column;gap:6px}
+#fmh{text-align:center;font-size:.75rem;color:#ff8a8a;padding:2px;touch-action:none}
+#fmb{display:flex;gap:4px}#fmb button{flex:1;margin:0;height:46px;padding:0;touch-action:none}
+#fmball{width:34px;height:34px;border-radius:50%;margin:0 auto;background:radial-gradient(circle at 35% 30%,#ff8a8a,#d4141f 60%,#3a1218);touch-action:none}
+#fmpad{height:80px;border-radius:14px 14px 34px 34px;background:#240b0f;display:grid;place-items:center;color:#b08a8e;font-size:.75rem;touch-action:none}
+#mset{padding:16px;overflow:auto;height:100%;display:grid;gap:12px;align-content:start;max-width:560px;margin:auto}#mset h3{margin:0}
+.opt{background:#240b0f;border:2px solid #3b161c;border-radius:12px;padding:12px;display:block}.opt.sel{border-color:#ff3b47}.opt small{color:#b08a8e}
+dialog input[type=text]{font:inherit;padding:6px;border-radius:8px;border:1px solid #3b161c;background:#0d0405;color:#fff}
+.chk{display:inline-flex;gap:6px;align-items:center;margin:4px;color:#f6ecec}
+footer{text-align:center;color:#b08a8e;padding:16px;font-size:.85rem}footer a,#menu a{color:#ff8a8a}
+#mbtn{position:absolute;right:max(8px,env(safe-area-inset-right));top:8px;z-index:8;width:40px;height:40px;margin:0;padding:0;border-radius:12px;background:#1a0709cc;font-size:1.2rem}
+#menu{position:absolute;right:max(8px,env(safe-area-inset-right));top:54px;z-index:9;width:min(330px,72vw);max-height:calc(100% - 64px);overflow:auto;background:#1a0709f5;border:2px solid #3b161c;border-radius:16px;padding:8px}
+#menu .pg>button{display:block;width:100%;text-align:left;margin:3px 0;padding:10px}
+#menu .mgrid{display:grid;grid-template-columns:1fr 1fr;gap:4px}#menu .mgrid button{margin:0;text-align:left;padding:10px;font-size:.85rem}
+#menu h3{margin:6px 0}#menu #mset,#menu #apps{padding:0;height:auto;max-width:none;overflow:visible}#menu label{display:block;margin:6px 0}
+#ebar{top:8px}#hud{left:max(6px,env(safe-area-inset-left));top:6px}#vid{will-change:transform}#stage{contain:layout paint}
+</style></head><body>
+<header><h1><img src="assets/logo.png" alt="Logo"> StarControl</h1><span id="mode" class="tag"></span></header>
+<main>
+<section id="downloads"><h2>1 · Downloads</h2><div class="cards">
+ <article id="card-pc" class="card"><h3>🖥 Windows</h3><p>Baixa o <b>agent.py</b> e o <b>INICIAR-PC.bat</b>. Deixe os dois na mesma pasta e dê dois cliques no .bat (precisa do Python instalado). O painel abre sozinho em localhost.</p>
+  <button id="dl-pc" class="btn">⬇ Baixar Launcher para PC</button>
+  <a class="mini" href="./downloads/StarControl-Instalador-Kit.zip" download>💿 Criar app instalável (.exe) — kit</a></article>
+ <article id="card-android" class="card"><h3>📱 Android</h3><p>Instale como app direto do navegador. Ou escaneie o QR Code para abrir este site no celular.</p>
+  <button id="install" class="btn">📲 Instalar Web App no Celular</button>
+  <div id="qr-site" class="qr"></div></article>
+ <article id="card-monitor" class="card"><h3>🖥 StarMonitor</h3><p>Use o celular como <b>segundo monitor</b> do PC, só na rede local (estilo spacedesk). Versão independente (servidor próprio, sem navegador no PC). O modo segundo monitor também já vem embutido no StarControl.</p>
+  <a class="btn" href="./downloads/StarMonitor.zip" download>⬇ Baixar StarMonitor (.zip)</a></article></div></section>
+
+<section id="pc-panel"><h2>2 · Pareamento e Transmissão</h2>
+ <div class="pair"><div><p>Código de pareamento</p><p style="margin:0;font-size:.85rem;color:#ff8a8a">🔒 Só funciona com o celular no mesmo Wi-Fi deste PC</p><div id="code" class="code">······</div>
+  <p id="status" class="status">Iniciando...</p>
+  <p id="agent">🔴 Agente PC: Desconectado (rode o INICIAR-PC.bat)</p>
+  <p id="localhint" class="status" hidden>Para controlar o Windows, use o painel local: <a href="http://localhost:8766" style="color:#ff8a8a">http://localhost:8766</a> (abre sozinho ao rodar o INICIAR-PC.bat).</p>
+  <label class="chk"><input type="checkbox" id="aud" checked> 🔊 Enviar áudio do Windows</label>
+  <select id="qual"><option value="fast">⚡ Rápido (720p · 60fps)</option><option value="bal">Equilibrado (1080p)</option><option value="max">Máxima (1440p)</option></select>
+  <label class="chk">🖥 Monitor controlado: <select id="mon" style="font:inherit;padding:8px;border-radius:10px;background:#240b0f;color:#fff;border:1px solid #3b161c"></select></label><button id="monr" class="btn alt" title="Atualizar lista de monitores">↻</button>
+  <details style="margin:8px 4px"><summary>📱 Usar o celular como segundo monitor</summary><ol style="margin:6px 0 0;padding-left:20px;font-size:.9rem;color:#b08a8e">
+   <li>Instale o <b>Virtual Display Driver</b> (github.com/VirtualDrivers/Virtual-Display-Driver) e, no Windows, escolha <b>Estender estas telas</b>.</li>
+   <li>Clique em <b>Iniciar Transmissão de Tela</b> e, na janela do Chrome, escolha a <b>Tela inteira</b> do monitor virtual.</li>
+   <li>O painel seleciona o <b>Monitor controlado</b> sozinho. Se houver dois monitores com a mesma proporção, escolha na lista (↻ atualiza).</li>
+   <li>No celular, conecte normalmente: o toque passa a controlar só o monitor virtual.</li></ol></details>
+  <div id="ctrlbar" class="status" hidden>🔴 Controlado por: <span id="who"></span> <button id="revoke" class="btn alt">⛔ Desconectar e trocar código</button></div>
+  <button id="share" class="btn">▶ Iniciar Transmissão de Tela</button>
+  <button id="test" class="btn alt">🧪 Testar mouse</button></div>
+  <div id="qr-pair" class="qr"></div></div>
+ <video id="preview" autoplay muted playsinline></video></section>
+
+<section id="phone-panel" hidden><h2>3 · Controle no Celular</h2>
+ <p style="color:#ff8a8a;margin-top:0">Conecte o celular ao <b>mesmo Wi-Fi do PC</b> (sem dados móveis nem VPN).</p>
+ <input id="codein" maxlength="9" autocapitalize="characters" autocomplete="off" placeholder="Código (ex.: K7QM-3XWD)">
+ <button id="connect" class="btn">Conectar ao PC</button>
+ <button id="scan" class="btn alt">📷 Ler QR Code</button>
+ <p id="wait" class="status" hidden></p></section>
+</main>
+<footer>Criado por <b>AOIofc1</b> · <a href="https://www.youtube.com/@AOIofc1" target="_blank" rel="noopener noreferrer">YouTube</a></footer>
+<dialog id="allow"><h3>Permitir controle remoto?</h3><p>Dispositivo: <span id="allow-ua"></span></p><p>Ele poderá ver a tela e controlar o mouse e o teclado deste PC. Negue se não foi você.</p><button id="allow-yes" class="btn">Permitir</button><button id="allow-no" class="btn alt">Negar</button></dialog>
+
+<div id="ctl" hidden>
+  <div id="tab-live" class="tab"><div id="stage"><video id="vid" autoplay playsinline muted disablepictureinpicture disableremoteplayback></video></div>
+  <div id="hud"></div>
+  <div id="gp"></div>
+  <div id="fm" hidden><div id="fmh">⠿ mouse</div><div id="fmb"><button id="fml">L</button><button id="fmr">R</button></div><div id="fmball" title="rolagem"></div><div id="fmpad">mover</div></div>
+  <button id="mbtn" aria-label="Menu">☰</button>
+  <div id="menu" hidden>
+   <div class="pg" data-p="main">
+    <div class="mgrid"><button id="bgp" class="on">🎮 Joystick</button><button id="bsnd">🔇 Som</button><button id="bmode">👆 Toque</button><button id="kbfloat">⌨ Teclado</button><button id="cfg">✏️ Controles</button></div>
+    <button data-go="mouse">🖱 Mouse (modo e sensibilidade)</button><button data-go="apps">🗂 Apps e atalhos</button><button data-go="cfg">⚙ Configurações</button><button data-go="cred">ℹ Créditos</button><button id="bye" class="alt">⏻ Sair</button>
+   </div>
+   <div class="pg" data-p="mouse" hidden><button data-back>← Voltar</button><div id="mset">
+    <label class="opt" data-m="float"><input type="radio" name="mm"> <b>🖱 Mouse flutuante</b><br><small>Mouse na tela com botão esquerdo, direito e bolinha de rolagem. Arraste o corpo para mover o cursor e o ⠿ para mudar de lugar.</small></label>
+    <label class="opt" data-m="touch"><input type="radio" name="mm"> <b>👆 Arrastar e tocar</b><br><small>O cursor vai para onde o dedo está. Toque = clique, segurar 0,5 s = botão direito, 2 dedos = rolar.</small></label>
+    <label class="opt" data-m="pad"><input type="radio" name="mm"> <b>🖐 Trackpad</b><br><small>Arraste para mover o cursor aos poucos (bom para a câmera dos jogos).</small></label>
+    <label>Sensibilidade do cursor <input id="sm" type="range" min=".5" max="4" step=".1"></label>
+    <label>Sensibilidade da rolagem <input id="ss" type="range" min=".5" max="3" step=".1"></label></div></div>
+   <div class="pg" data-p="apps" hidden><button data-back>← Voltar</button><div id="apps"></div></div>
+   <div class="pg" data-p="cfg" hidden><button data-back>← Voltar</button><h3>Configurações</h3><p>Mostrar no canto da tela:</p>
+    <label class="opt"><input type="checkbox" data-hud="fps"> FPS</label><label class="opt"><input type="checkbox" data-hud="ping"> Ping</label>
+    <label class="opt"><input type="checkbox" data-hud="cpu"> CPU do PC</label><label class="opt"><input type="checkbox" data-hud="gpu"> GPU do PC</label>
+    <label class="opt"><input type="checkbox" data-hud="buf"> Buffer (atraso do vídeo)</label><label class="opt"><input type="checkbox" data-hud="mbps"> Taxa de dados (Mbps)</label></div>
+   <div class="pg" data-p="cred" hidden><button data-back>← Voltar</button><h3>Créditos</h3><img src="assets/logo.png" alt="Logo" style="width:72px;border-radius:14px"><p><b>StarControl</b></p><p>Criado por <b>AOIofc1</b></p>
+    <p><a href="https://www.youtube.com/@AOIofc1" target="_blank" rel="noopener noreferrer">▶ Canal no YouTube: youtube.com/@AOIofc1</a></p></div>
+  </div>
+  <div id="ebar" hidden><button id="eadd">＋ Botão</button><button id="eexp">📤 Exportar</button><button id="eimp">📥 Importar</button><button id="erst">♻ Padrão</button><button id="edone" class="on">✔ Concluir</button></div>
+  <input type="file" id="imp" accept=".json,application/json" hidden>
+  <dialog id="cfgd"></dialog></div>
+ <input id="kbin" type="password" autocomplete="new-password" autocapitalize="off" spellcheck="false">
+  <div id="qk" hidden><button data-key="enter">Enter</button><button data-key="backspace">⌫ Backspace</button><button data-key="esc">Esc</button><button data-key="tab">Tab</button><button data-mod="ctrl">Ctrl</button><button data-mod="alt">Alt</button><button data-combo="ctrl+c">Ctrl+C</button><button data-combo="ctrl+v">Ctrl+V</button><button data-key="win">⊞ Win</button></div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.4/peerjs.min.js"></script>
+<script>
+const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
+const ua=navigator.userAgent,isAndroid=/Android/i.test(ua),isMobile=/Android|iPhone|iPad/i.test(ua);
+const ALF='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+const newCode=()=>Array.from(crypto.getRandomValues(new Uint8Array(8)),b=>ALF[b%32]).join('');
+const fmtCode=c=>c.slice(0,4)+'-'+c.slice(4);
+const normCode=s=>String(s).toUpperCase().replace(/[^A-Z2-9]/g,'');
+const okCode=s=>/^[A-HJ-NP-Z2-9]{8}$/.test(s);
+const OKT=new Set(['abs','rel','click','scroll','down','up','type','combo','open','kill','want']);
+const AGENT_PY="# StarControl agente Windows (gerado pelo site). Dê dois cliques em INICIAR-PC.bat.\n# Segurança: aceita só o painel local (Origin) com token secreto, 1 controlador por vez,\n# limites de tamanho/taxa e pausa de emergência com Ctrl+Alt+F12.\nimport asyncio, json, os, sys, ctypes, subprocess, threading, webbrowser, logging, secrets, hmac, shutil\nfrom http.server import BaseHTTPRequestHandler, ThreadingHTTPServer\nimport websockets, pydirectinput\nfrom pynput.mouse import Controller as Mouse\nfrom pynput.keyboard import Controller as Keyboard, GlobalHotKeys\n\nif sys.stdout is None or sys.stderr is None:  # exe sem console: grava em arquivo de log\n    _d = os.path.join(os.environ.get(\"LOCALAPPDATA\", \".\"), \"StarControl\"); os.makedirs(_d, exist_ok=True)\n    sys.stdout = sys.stderr = open(os.path.join(_d, \"agent.log\"), \"a\", buffering=1, encoding=\"utf-8\")\nSILENT = \"--silent\" in sys.argv\nlogging.basicConfig(level=logging.INFO, format=\"%(message)s\")\nINDEX_HTML = \"__INDEX__\"\nTOKEN = secrets.token_urlsafe(16)\nPAUSED = False\nBUSY = False\nctypes.windll.user32.SetProcessDPIAware()\nfrom ctypes import wintypes\nclass MONITORINFO(ctypes.Structure):\n    _fields_ = [(\"cbSize\", wintypes.DWORD), (\"rcMonitor\", wintypes.RECT), (\"rcWork\", wintypes.RECT), (\"dwFlags\", wintypes.DWORD)]\n_PROC = ctypes.WINFUNCTYPE(ctypes.c_int, ctypes.c_void_p, ctypes.c_void_p, ctypes.POINTER(wintypes.RECT), wintypes.LPARAM)\ndef list_monitors():\n    out = []\n    def cb(hm, hdc, rect, lp):\n        mi = MONITORINFO(); mi.cbSize = ctypes.sizeof(MONITORINFO)\n        ctypes.windll.user32.GetMonitorInfoW(ctypes.c_void_p(hm), ctypes.byref(mi))\n        r = mi.rcMonitor\n        out.append({\"l\": r.left, \"t\": r.top, \"w\": r.right - r.left, \"h\": r.bottom - r.top, \"primary\": bool(mi.dwFlags & 1)})\n        return 1\n    ctypes.windll.user32.EnumDisplayMonitors(None, None, _PROC(cb), 0)\n    if not out:\n        out = [{\"l\": 0, \"t\": 0, \"w\": ctypes.windll.user32.GetSystemMetrics(0), \"h\": ctypes.windll.user32.GetSystemMetrics(1), \"primary\": True}]\n    return sorted(out, key=lambda m: (not m[\"primary\"], m[\"l\"], m[\"t\"]))\nMONS = list_monitors()\nTARGET = 0  # monitor controlado pelo toque (0 = principal)\ndef mon_msg(): return {\"t\": \"monitors\", \"list\": MONS, \"target\": TARGET}\npydirectinput.PAUSE = 0\npydirectinput.FAILSAFE = False\ntry:  # menos atraso: timer de 1 ms e prioridade acima do normal\n    ctypes.windll.winmm.timeBeginPeriod(1)\n    ctypes.windll.kernel32.SetPriorityClass(ctypes.windll.kernel32.GetCurrentProcess(), 0x8000)\nexcept Exception: pass\ntry:  # evita que um clique na janela preta congele o agente\n    k32 = ctypes.windll.kernel32; hin = k32.GetStdHandle(-10); mode = ctypes.c_uint()\n    k32.GetConsoleMode(hin, ctypes.byref(mode)); k32.SetConsoleMode(hin, (mode.value & ~0x40) | 0x80)\nexcept Exception: pass\nmouse, kb = Mouse(), Keyboard()\nBTN = {\"mouseL\": \"left\", \"mouseR\": \"right\"}\nAPPS = {\"notepad\": \"notepad.exe\", \"calc\": \"calc.exe\", \"explorer\": \"explorer.exe\", \"chrome\": \"chrome.exe\",\n        \"edge\": \"msedge.exe\", \"taskmgr\": \"taskmgr.exe\", \"paint\": \"mspaint.exe\", \"settings\": \"ms-settings:\"}\n\ndef clamp(v, a, b): return int(max(a, min(b, float(v))))\ndef valid(k): return isinstance(k, str) and (k in BTN or k in pydirectinput.KEYBOARD_MAPPING)\ndef pos(d):\n    m = MONS[TARGET] if TARGET < len(MONS) else MONS[0]\n    x = min(max(float(d[\"x\"]), 0), 1); y = min(max(float(d[\"y\"]), 0), 1)\n    ctypes.windll.user32.SetCursorPos(int(m[\"l\"] + x * (m[\"w\"] - 1)), int(m[\"t\"] + y * (m[\"h\"] - 1)))\nNOWIN = 0x08000000\nWANT = {\"cpu\": False, \"gpu\": False}\nclass FT(ctypes.Structure): _fields_ = [(\"lo\", ctypes.c_uint32), (\"hi\", ctypes.c_uint32)]\n_cpu_last = None\ndef cpu_percent():\n    global _cpu_last\n    i, k, u = FT(), FT(), FT()\n    ctypes.windll.kernel32.GetSystemTimes(ctypes.byref(i), ctypes.byref(k), ctypes.byref(u))\n    cur = tuple((f.hi << 32) | f.lo for f in (i, k, u))\n    last, _cpu_last = _cpu_last, cur\n    if not last: return None\n    di, dk, du = (cur[n] - last[n] for n in range(3))\n    tot = dk + du\n    return max(0, min(100, round(100 * (tot - di) / tot))) if tot else 0\n_nv = None\ndef gpu_percent():\n    global _nv\n    try:\n        if _nv is None: _nv = shutil.which(\"nvidia-smi\") or \"\"\n        if _nv:\n            o = subprocess.run([_nv, \"--query-gpu=utilization.gpu\", \"--format=csv,noheader,nounits\"],\n                               capture_output=True, text=True, timeout=3, creationflags=NOWIN).stdout.split()\n            return int(float(o[0]))\n        o = subprocess.run([\"typeperf\", r\"\\GPU Engine(*engtype_3D)\\Utilization Percentage\", \"-sc\", \"1\"],\n                           capture_output=True, text=True, timeout=6, creationflags=NOWIN).stdout.splitlines()\n        rows = [l for l in o if l.startswith('\"') and not l.startswith('\"(PDH')]\n        return min(100, round(sum(float(x) for x in rows[0].strip('\"').split('\",\"')[1:])))\n    except Exception:\n        return None\nasync def pump(ws):\n    loop = asyncio.get_running_loop()\n    while True:\n        await asyncio.sleep(2)\n        if not (WANT[\"cpu\"] or WANT[\"gpu\"]): continue\n        cpu = cpu_percent() if WANT[\"cpu\"] else None\n        gpu = await loop.run_in_executor(None, gpu_percent) if WANT[\"gpu\"] else None\n        try: await ws.send(json.dumps({\"t\": \"stats\", \"cpu\": cpu, \"gpu\": gpu}))\n        except Exception: return\n\ndef toggle_pause():\n    global PAUSED\n    PAUSED = not PAUSED\n    print(\"CONTROLE REMOTO PAUSADO (Ctrl+Alt+F12 para retomar)\" if PAUSED else \"Controle remoto retomado.\")\n\nasync def handle(ws):\n    global BUSY, TARGET, MONS\n    if BUSY:\n        await ws.close(1013, \"ocupado\"); return\n    try:\n        first = json.loads(await asyncio.wait_for(ws.recv(), 5))\n        if first.get(\"t\") != \"auth\" or not hmac.compare_digest(str(first.get(\"k\", \"\")), TOKEN):\n            print(\"Conexao recusada: token invalido. Abra o painel pelo link que o agente abre sozinho.\")\n            await ws.close(1008, \"token\"); return\n    except Exception:\n        await ws.close(1008, \"auth\"); return\n    BUSY = True\n    await ws.send(\"ok\")\n    MONS = list_monitors(); TARGET = min(TARGET, len(MONS) - 1)\n    await ws.send(json.dumps(mon_msg()))\n    print(\"Painel conectado ao agente.\")\n    task = asyncio.create_task(pump(ws))\n    try:\n        async for raw in ws:\n            if PAUSED or len(raw) > 400: continue\n            try:\n                d = json.loads(raw); t = d[\"t\"]\n                if t == \"abs\": pos(d)\n                elif t == \"rel\": pydirectinput.moveRel(clamp(d[\"dx\"], -300, 300), clamp(d[\"dy\"], -300, 300), relative=True)\n                elif t == \"click\":\n                    if \"x\" in d: pos(d)\n                    pydirectinput.click(button=\"right\" if d.get(\"b\") == \"right\" else \"left\", clicks=min(int(d.get(\"n\", 1)), 2), interval=0.03)\n                elif t == \"scroll\": mouse.scroll(0, clamp(d[\"dy\"], -20, 20))\n                elif t in (\"down\", \"up\") and valid(d[\"k\"]):\n                    k = d[\"k\"]\n                    if k in BTN: (pydirectinput.mouseDown if t == \"down\" else pydirectinput.mouseUp)(button=BTN[k])\n                    else: (pydirectinput.keyDown if t == \"down\" else pydirectinput.keyUp)(k)\n                elif t == \"type\": kb.type(str(d[\"text\"])[:200])\n                elif t == \"combo\":\n                    ks = [x for x in d[\"keys\"][:5] if valid(x)]\n                    for x in ks: pydirectinput.keyDown(x)\n                    for x in reversed(ks): pydirectinput.keyUp(x)\n                elif t == \"target\": TARGET = max(0, min(len(MONS) - 1, int(d[\"i\"])))\n                elif t == \"mon\":\n                    MONS = list_monitors(); TARGET = min(TARGET, len(MONS) - 1); await ws.send(json.dumps(mon_msg()))\n                elif t == \"want\": WANT[\"cpu\"] = bool(d.get(\"cpu\")); WANT[\"gpu\"] = bool(d.get(\"gpu\"))\n                elif t == \"open\" and d.get(\"app\") in APPS: os.startfile(APPS[d[\"app\"]])\n                elif t == \"kill\" and d.get(\"app\") in APPS and APPS[d[\"app\"]].endswith(\".exe\") and d[\"app\"] != \"explorer\":\n                    subprocess.run([\"taskkill\", \"/IM\", APPS[d[\"app\"]], \"/F\"], capture_output=True)\n            except Exception as e:\n                print(\"erro:\", e)\n    finally:\n        task.cancel(); WANT[\"cpu\"] = WANT[\"gpu\"] = False; BUSY = False\n        print(\"Painel desconectado do agente.\")\n\nclass Web(BaseHTTPRequestHandler):\n    def do_GET(self):\n        if self.path.split(\"?\")[0] in (\"/\", \"/index.html\"):\n            b = INDEX_HTML.encode(\"utf-8\")\n            self.send_response(200); self.send_header(\"Content-Type\", \"text/html; charset=utf-8\")\n            self.send_header(\"Content-Length\", str(len(b))); self.send_header(\"Cache-Control\", \"no-store\")\n            self.send_header(\"X-Frame-Options\", \"DENY\"); self.send_header(\"Content-Security-Policy\", \"frame-ancestors 'none'\")\n            self.send_header(\"X-Content-Type-Options\", \"nosniff\"); self.send_header(\"Referrer-Policy\", \"no-referrer\")\n            self.end_headers(); self.wfile.write(b)\n        else: self.send_error(404)\n    def log_message(self, *a): pass\n\ndef start_tray(url):\n    \"\"\"Ícone na bandeja (só no .exe): abrir painel, pausar controle, sair.\"\"\"\n    try:\n        import pystray\n        from PIL import Image, ImageDraw\n        img = Image.new(\"RGB\", (64, 64), (212, 20, 31)); d = ImageDraw.Draw(img)\n        d.rectangle((8, 20, 56, 44), fill=\"white\"); d.text((16, 26), \"AOI\", fill=(60, 10, 15))\n        M = pystray.MenuItem\n        menu = pystray.Menu(\n            M(\"Abrir painel\", lambda icon, item: webbrowser.open(url), default=True),\n            M(lambda item: \"Retomar controle\" if PAUSED else \"Pausar controle (Ctrl+Alt+F12)\", lambda icon, item: toggle_pause()),\n            M(\"Sair\", lambda icon, item: (icon.stop(), os._exit(0))))\n        pystray.Icon(\"StarControl\", img, \"StarControl PC\", menu).run_detached()\n    except Exception as e:\n        print(\"Bandeja indisponivel:\", e)\n\nasync def main():\n    if len(INDEX_HTML) < 100:\n        print(\"Baixe o launcher pelo botão do site (ele gera este arquivo completo).\"); return\n    try:\n        srv = ThreadingHTTPServer((\"127.0.0.1\", 8766), Web)\n    except OSError:\n        print(\"A porta 8766 ja esta em uso: provavelmente ja existe outro agente aberto. Feche as outras janelas pretas e tente de novo.\")\n        if getattr(sys, \"frozen\", False):\n            ctypes.windll.user32.MessageBoxW(0, \"O StarControl ja esta aberto (veja o icone perto do relogio).\", \"StarControl\", 0x40)\n        sys.exit(3)\n    threading.Thread(target=srv.serve_forever, daemon=True).start()\n    GlobalHotKeys({\"<ctrl>+<alt>+<f12>\": toggle_pause}).start()\n    url = f\"http://localhost:8766/?k={TOKEN}\"\n    async with websockets.serve(handle, \"127.0.0.1\", 8765, origins=[\"http://localhost:8766\", \"http://127.0.0.1:8766\"],\n                                ping_interval=None, ping_timeout=None, max_size=2048):\n        print(\"Agente PC ativo e pronto. Painel (use este link): \" + url)\n        print(\"PAUSA DE EMERGENCIA: Ctrl+Alt+F12 bloqueia/libera o controle remoto. Feche esta janela para parar.\")\n        if not SILENT: webbrowser.open(url)\n        if getattr(sys, \"frozen\", False): start_tray(url)\n        await asyncio.Future()\n\nasyncio.run(main())\n";
+const BAT_TXT="@echo off\r\nchcp 65001 >nul\r\ntitle StarControl PC\r\ncd /d \"%~dp0\"\r\nset PY=python\r\nwhere py >nul 2>nul && set PY=py\r\n%PY% --version >nul 2>nul || (echo Python nao encontrado. Instale em https://www.python.org/downloads/ marcando \"Add Python to PATH\". & pause & exit /b 1)\r\n%PY% -c \"import websockets,pydirectinput,pynput\" >nul 2>nul || (echo Instalando dependencias... & %PY% -m pip install \"websockets>=12,<16\" \"pydirectinput>=1.0.4\" \"pynput>=1.7\")\r\n:run\r\necho Iniciando StarControl... (feche esta janela para parar; nao clique dentro dela)\r\n%PY% agent.py\r\nif errorlevel 3 (echo. & echo Ja existe outro agente aberto. Feche as outras janelas pretas e tente de novo. & pause & exit /b 3)\r\necho.\r\necho O agente parou. Reiniciando em 3 segundos...\r\ntimeout /t 3 >nul\r\ngoto run\r\n";
+const PUB=document.querySelector('meta[name=public-url]')?.content||new URL('.',location.href).href;
+const base=new URL('.',location.href).href;
+const qr=(el,text,size=5)=>{const q=qrcode(0,'M');q.addData(text);q.make();el.innerHTML=q.createImgTag(size,8)};
+$('#mode').textContent=isMobile?'Celular':'PC';
+(isAndroid?$('#card-android'):(!isMobile&&/Windows/i.test(ua))?$('#card-pc'):null)?.classList.add('hl');
+qr($('#qr-site'),base);
+let dip=null;addEventListener('beforeinstallprompt',e=>{e.preventDefault();dip=e});
+$('#install').onclick=async()=>{
+ if(dip){dip.prompt();await dip.userChoice;dip=null;return}
+ if(matchMedia('(display-mode: standalone)').matches)return alert('O Web App já está instalado.');
+ alert(isMobile?'Toque nos 3 pontinhos (⋮) do navegador e escolha "Instalar app", "Criar atalho" ou "Adicionar à tela inicial".':'Abra este site no navegador do celular (escaneie o QR Code) e use o menu ⋮ → "Instalar app" / "Adicionar à tela inicial".')};
+async function pageSource(){let s=await (await fetch(location.href.split('#')[0],{cache:'no-store'})).text();
+ return s.includes('name="public-url"')?s:s.replace('<head>','<head><meta name="public-url" content="'+base+'">')}
+const saveText=(n,t)=>{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([t],{type:'text/plain;charset=utf-8'}));a.download=n;document.body.append(a);a.click();a.remove()};
+$('#dl-pc').onclick=async()=>{try{const src=await pageSource();saveText('agent.py',AGENT_PY.replace('"__INDEX__"',()=>JSON.stringify(src)));setTimeout(()=>saveText('INICIAR-PC.bat',BAT_TXT),700)}catch(e){alert('Falha ao gerar o launcher: '+e.message)}};
+if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
+let conn=null;const send=o=>{if(conn&&conn.open)conn.send(o)};
+
+/* ---------- BAIXA LATÊNCIA ---------- */
+const Q={fast:{w:1280,h:720,br:6e6},bal:{w:1920,h:1080,br:12e6},max:{w:2560,h:1440,br:2e7}};
+const curQ=()=>Q[($('#qual')||{}).value]||Q.fast;
+const vidPref=sdp=>{try{const L=sdp.split('\r\n'),i=L.findIndex(l=>l.startsWith('m=video'));if(i<0)return sdp;
+ const pts=[];L.forEach(l=>{const m=l.match(/^a=rtpmap:(\d+) H264\/90000/);if(m)pts.push(m[1])});if(!pts.length)return sdp;
+ const good=pts.filter(p=>L.some(l=>l.startsWith('a=fmtp:'+p+' ')&&/packetization-mode=1/.test(l)&&/profile-level-id=42e0/.test(l)));
+ const first=good.length?good:pts,parts=L[i].split(' ');
+ L[i]=parts.slice(0,3).concat(first,parts.slice(3).filter(x=>!first.includes(x))).join(' ');
+ return L.map(l=>l.startsWith('a=fmtp:'+first[0]+' ')?l+';x-google-min-bitrate=2000;x-google-start-bitrate=4000':l).join('\r\n')}catch(e){return sdp}};
+const opusTune=sdp=>{try{const m=sdp.match(/a=rtpmap:(\d+) opus\/48000/);if(!m)return sdp;
+ return sdp.split('\r\n').map(l=>l.startsWith('a=fmtp:'+m[1]+' ')&&!/stereo=1/.test(l)?l+';stereo=1;sprop-stereo=1;maxaveragebitrate=128000':l).join('\r\n')}catch(e){return sdp}};
+const preferH264=sdp=>opusTune(vidPref(sdp));
+const tuneSender=call=>{try{call.peerConnection.getSenders().filter(s=>s.track&&s.track.kind==='video').forEach(async s=>{
+ const p=s.getParameters(),q=curQ();if(!p.encodings||!p.encodings.length)p.encodings=[{}];
+ p.encodings[0].maxBitrate=q.br;p.encodings[0].maxFramerate=60;
+ p.encodings[0].scaleResolutionDownBy=Math.max(1,(s.track.getSettings().width||q.w)/q.w);
+ p.degradationPreference='maintain-framerate';await s.setParameters(p)})}catch(e){}};
+const tuneRecv=call=>{try{call.peerConnection.getReceivers().forEach(r=>{if(!r.track)return;const t=r.track.kind==='video'?0:30;try{r.jitterBufferTarget=t}catch(e){}try{r.playoutDelayHint=t/1000}catch(e){}})}catch(e){}};
+const vol=()=>{$('#bsnd').textContent=$('#vid').muted?'🔇 Som':'🔊 Som'};
+function setSound(on){const v=$('#vid');v.muted=!on;v.play().catch(()=>{v.muted=true;vol()});vol()}
+const HUDS=Object.assign({fps:true,ping:true,buf:false,mbps:false,cpu:false,gpu:false},(()=>{try{return JSON.parse(localStorage.getItem('sc-hud'))||{}}catch(e){return {}}})());
+const pcs={cpu:null,gpu:null};
+let hudT=null,pB=0,pT=0,last={rtt:'?',typ:'?',fps:'?',buf:'?',br:'?'};
+const drawHud=()=>{const p=[];
+ if(HUDS.fps)p.push(last.fps+' FPS');if(HUDS.ping)p.push('ping '+last.rtt+' ms'+(last.typ==='RELAY'||last.typ==='NAT'?' ⚠':''));
+ if(HUDS.buf)p.push('buf '+last.buf+' ms');if(HUDS.mbps)p.push(last.br+' Mbps');
+ if(HUDS.cpu)p.push('CPU '+(pcs.cpu==null?'…':pcs.cpu+'%'));if(HUDS.gpu)p.push('GPU '+(pcs.gpu==null?'n/d':pcs.gpu+'%'));
+ const e=$('#hud');e.textContent=p.join(' · ');e.hidden=!p.length};
+const sendWant=()=>send({t:'want',cpu:!!HUDS.cpu,gpu:!!HUDS.gpu});
+const hud=c=>{clearInterval(hudT);hudT=setInterval(async()=>{
+ if(!(HUDS.fps||HUDS.ping||HUDS.buf||HUDS.mbps)){drawHud();return}
+ try{const st=await c.peerConnection.getStats();
+  st.forEach(r=>{
+   if(r.type==='candidate-pair'&&r.nominated&&r.state==='succeeded'){last.rtt=Math.round((r.currentRoundTripTime||0)*1000);const l=st.get(r.localCandidateId),m=st.get(r.remoteCandidateId),a=l&&l.candidateType,b=m&&m.candidateType;
+    last.typ=(a==='relay'||b==='relay')?'RELAY':(a==='host'&&b==='host')?'direto':'NAT'}
+   if(r.type==='inbound-rtp'&&r.kind==='video'){last.fps=Math.round(r.framesPerSecond||0);if(r.jitterBufferEmittedCount)last.buf=Math.round(r.jitterBufferDelay/r.jitterBufferEmittedCount*1000);
+    if(pT)last.br=((r.bytesReceived-pB)*8/(r.timestamp-pT)/1000).toFixed(1);pB=r.bytesReceived;pT=r.timestamp}});
+  drawHud()}catch(e){}},1000)};
+
+/* ---------- MODO PC ---------- */
+const isLanAddr=a=>{if(!a)return true;a=String(a).toLowerCase().replace(/^::ffff:/,'');if(a.endsWith('.local'))return true;
+ if(a.includes(':'))return /^(fe80|fc|fd|::1)/.test(a);
+ const p=a.split('.').map(Number);if(p.length!==4||p.some(isNaN))return false;
+ return p[0]===10||p[0]===127||(p[0]===192&&p[1]===168)||(p[0]===172&&p[1]>=16&&p[1]<=31)||(p[0]===169&&p[1]===254)};
+async function onLan(c){try{const st=await c.peerConnection.getStats();let pair=null;
+ st.forEach(r=>{if(r.type==='transport'&&r.selectedCandidatePairId)pair=st.get(r.selectedCandidatePairId)});
+ if(!pair)st.forEach(r=>{if(r.type==='candidate-pair'&&r.nominated&&r.state==='succeeded')pair=r});
+ if(!pair)return true;
+ const m=st.get(pair.remoteCandidateId),l=st.get(pair.localCandidateId),t=[m&&m.candidateType,l&&l.candidateType];
+ if(t.includes('relay')||t.includes('srflx'))return false;
+ return isLanAddr(m&&(m.address||m.ip))}catch(e){return true}}
+function pcMode(){
+ const st=t=>$('#status').textContent=t;
+ let peer=null,code='',stream=null,ctrl=null,agent=null,ready=false,pending=false,lock=0,expT=null,fails=[];
+ const rate={n:0,t:0},live=()=>ctrl&&ctrl.open;
+ if(!/^(localhost|127\.0\.0\.1)$/.test(location.hostname))$('#localhint').hidden=false;
+ const callPhone=id=>{const call=peer.call(id,stream,{sdpTransform:preferH264});setTimeout(()=>tuneSender(call),1500);setTimeout(()=>tuneSender(call),4000)};
+ let MONS=[],tgt=0;
+ const fillMon=m=>{MONS=m.list||[];tgt=m.target||0;const s=$('#mon');s.innerHTML='';MONS.forEach((x,i)=>s.add(new Option('Monitor '+(i+1)+(x.primary?' (principal)':'')+' · '+x.w+'×'+x.h,i,false,i===tgt)))};
+ const aSend=o=>{if(agent&&agent.readyState===1&&ready)agent.send(JSON.stringify(o))};
+ const setTarget=i=>{tgt=i;$('#mon').value=i;aSend({t:'target',i})};
+ $('#mon').onchange=e=>setTarget(+e.target.value);
+ $('#monr').onclick=()=>aSend({t:'mon'});
+ const autoTarget=(w,h)=>{if(MONS.length<2||!w||!h)return;const r=w/h,c=MONS.map((m,i)=>[i,Math.abs(m.w/m.h-r)]).filter(x=>x[1]<.01).map(x=>x[0]);
+  if(c.length===1)setTarget(c[0]);else if(c.length>1)st('⚠ Mais de um monitor com essa proporção: confira "Monitor controlado" (↻ atualiza a lista)')};
+ function ask(c,ua){return new Promise(res=>{const d=$('#allow');$('#allow-ua').textContent=ua;let done=false;
+  const fin=v=>{if(done)return;done=true;clearTimeout(t);try{d.close()}catch(e){}res(v)};
+  const t=setTimeout(()=>fin(false),30000);
+  $('#allow-yes').onclick=()=>fin(true);$('#allow-no').onclick=()=>fin(false);d.oncancel=()=>fin(false);c.on('close',()=>fin(false));d.showModal()})}
+ function onData(d){
+  if(!ready||!d||!OKT.has(d.t)||!agent||agent.readyState!==1)return;
+  const n=Date.now();if(n-rate.t>1000){rate.t=n;rate.n=0}if(++rate.n>400)return;
+  const s=JSON.stringify(d);if(s.length>400)return;agent.send(s)}
+ function onConn(c){
+  if(live()||pending||Date.now()<lock){c.on('open',()=>c.close());return}
+  pending=true;const ua=String((c.metadata&&c.metadata.ua)||'dispositivo desconhecido').slice(0,90);
+  const tmo=setTimeout(()=>{if(!c.open)pending=false},20000);
+  const go=async()=>{clearTimeout(tmo);
+   if(!(await onLan(c))){pending=false;st('Recusado: dispositivo fora da sua rede local');try{c.close()}catch(e){}return}
+   const ok=await ask(c,ua);pending=false;
+   if(!ok){const n=Date.now();fails=fails.filter(t=>n-t<60000);fails.push(n);if(fails.length>=3){lock=n+60000;st('Muitas tentativas: bloqueado por 60 s')}try{c.close()}catch(e){}return}
+   ctrl=c;clearTimeout(expT);$('#who').textContent=ua;$('#ctrlbar').hidden=false;st('Controlado por dispositivo ✔');
+   const start=()=>{c.send({t:'allowed'});if(stream)callPhone(c.peer)};c.open?start():c.on('open',start);
+   c.on('data',onData);c.on('close',()=>{if(ctrl===c){ctrl=null;session()}})};
+  c.open?go():c.on('open',go)}
+ function session(){
+  clearTimeout(expT);if(peer){try{peer.destroy()}catch(e){}}
+  ctrl=null;pending=false;code=newCode();$('#code').textContent=fmtCode(code);qr($('#qr-pair'),PUB+'?c='+code);$('#ctrlbar').hidden=true;st('Iniciando...');
+  peer=new Peer('sc-'+code,{config:{iceServers:[]}});
+  peer.on('open',()=>st('Aguardando dispositivo...'));
+  peer.on('error',e=>{st('Erro: '+e.type);if(e.type==='unavailable-id')session()});
+  peer.on('connection',onConn);
+  expT=setTimeout(()=>{if(!ctrl&&!pending)session()},600000)}
+ $('#revoke').onclick=()=>{const c=ctrl;ctrl=null;try{c&&c.close()}catch(e){}session()};
+ $('#share').onclick=async()=>{
+  try{stream=await navigator.mediaDevices.getDisplayMedia({video:{width:{ideal:curQ().w},height:{ideal:curQ().h},frameRate:{ideal:60,max:60}},audio:$('#aud').checked?{echoCancellation:false,noiseSuppression:false,autoGainControl:false}:false,systemAudio:'include'});
+   stream.getVideoTracks()[0].contentHint='motion';
+   {const s=stream.getVideoTracks()[0].getSettings();autoTarget(s.width,s.height)}
+   if($('#aud').checked&&!stream.getAudioTracks().length)st('⚠ Sem áudio: escolha "Tela inteira" e marque "Compartilhar áudio do sistema"');
+   $('#preview').srcObject=stream;
+   stream.getVideoTracks()[0].onended=()=>{stream=null;$('#share').textContent='▶ Iniciar Transmissão de Tela'};
+   if(live())callPhone(ctrl.peer);$('#share').textContent='Transmitindo ✔';
+  }catch(e){st('Transmissão cancelada')}};
+ $('#test').onclick=()=>{if(ready&&agent&&agent.readyState===1){[[.5,.5],[.58,.5],[.58,.58],[.5,.58],[.5,.5]].forEach((p,k)=>setTimeout(()=>agent.send(JSON.stringify({t:'abs',x:p[0],y:p[1]})),k*250))}else alert('Agente desconectado: rode o INICIAR-PC.bat e use o painel que ele abre')};
+ const AK=(()=>{const q=new URLSearchParams(location.search).get('k');if(q){try{sessionStorage.setItem('sc-k',q)}catch(e){}history.replaceState(null,'',location.pathname)}try{return sessionStorage.getItem('sc-k')||''}catch(e){return ''}})();
+ let off=null;
+ (function con(){
+  let ws;try{ws=new WebSocket('ws://127.0.0.1:8765')}catch(e){setTimeout(con,3000);return}
+  ws.onopen=()=>ws.send(JSON.stringify({t:'auth',k:AK}));
+  ws.onmessage=ev=>{if(ev.data==='ok'){clearTimeout(off);agent=ws;ready=true;$('#agent').textContent='🟢 Agente PC: Conectado (Pronto para controlar)';$('#agent').className='agent-on';return}
+   try{const m=JSON.parse(ev.data);if(m.t==='stats'){if(live())ctrl.send({t:'stats',cpu:m.cpu,gpu:m.gpu})}else if(m.t==='monitors')fillMon(m)}catch(e){}};
+  ws.onclose=ev=>{if(agent===ws){agent=null;ready=false}clearTimeout(off);
+   off=setTimeout(()=>{$('#agent').textContent='🔴 Agente PC: Desconectado (rode o INICIAR-PC.bat e use o painel que ele abre sozinho) · código '+ev.code;$('#agent').className='agent-off'},2000);setTimeout(con,2000)};
+ })();
+ session();
+}
+
+/* ---------- MODO CELULAR ---------- */
+let peer=null;
+function go(raw){
+ const code=normCode(raw);if(!okCode(code))return alert('Código inválido');
+ const pid='sc-'+code;$('#wait').hidden=false;$('#wait').textContent='Conectando...';
+ peer=new Peer({config:{iceServers:[]}});
+ peer.on('open',()=>{
+  conn=peer.connect(pid,{reliable:true,serialization:'json',metadata:{ua:navigator.userAgent.slice(0,90)}});
+  conn.on('open',()=>{$('#wait').textContent='Aguardando aprovação no PC...'});
+  setTimeout(()=>{if(conn&&!conn.open)$('#wait').textContent='⚠ Não conectou. Use o mesmo Wi-Fi do PC (sem dados móveis nem VPN) e confira o código.'},15000);
+  conn.on('data',d=>{if(d&&d.t==='allowed'){$('#phone-panel').hidden=true;$('#ctl').hidden=false;
+   document.documentElement.requestFullscreen?.().catch(()=>{});screen.orientation?.lock?.('landscape').catch(()=>{});sendWant()}else if(d&&d.t==='stats'){pcs.cpu=d.cpu;pcs.gpu=d.gpu}});
+  conn.on('close',()=>{alert('Conexão encerrada ou recusada pelo PC.');location.reload()});
+ });
+ peer.on('call',c=>{if(c.peer!==pid){c.close();return}c.answer();c.on('stream',s=>{$('#vid').srcObject=s;setSound(true);tuneRecv(c);setTimeout(()=>tuneRecv(c),2000);hud(c)})});
+ peer.on('error',e=>{alert('Erro: '+e.type);$('#wait').hidden=true});
+}
+$('#connect').onclick=()=>go($('#codein').value.trim());
+$('#bye').onclick=()=>location.reload();
+$('#scan').onclick=async()=>{
+ if(!('BarcodeDetector' in window))return alert('Leitor de QR não suportado neste navegador. Digite o código.');
+ const v=document.createElement('video');v.playsInline=true;v.className='scanv';
+ v.srcObject=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}});await v.play();document.body.append(v);
+ const det=new BarcodeDetector({formats:['qr_code']});
+ const loop=async()=>{const r=await det.detect(v).catch(()=>[]);
+  if(r[0]){v.srcObject.getTracks().forEach(t=>t.stop());v.remove();const m=r[0].rawValue.match(/c=([A-Z2-9]{8})/);if(m)go(m[1]);return}
+  requestAnimationFrame(loop)};loop();
+};
+
+/* Tela ao vivo: controle direto sobre o video */
+const stage=$('#stage'),vid=$('#vid');let sc=1,tx=0,ty=0,d0=0,sc0=1,m0=[0,0],mode=null,lp=null,pend=null,raf=0,startP=[0,0],dragged=false,gone=false,acc2=0,tp=false,lastXY=[0,0],relAcc=[0,0],raf2=0;
+let vr=null;const getVR=()=>vr||(vr=vid.getBoundingClientRect());addEventListener('resize',()=>{vr=null});vid.addEventListener('loadedmetadata',()=>{vr=null});
+const ap=()=>{vr=null;vid.style.transform=`translate(${tx}px,${ty}px) scale(${sc})`};
+const dist=e=>Math.hypot(e.targetTouches[0].clientX-e.targetTouches[1].clientX,e.targetTouches[0].clientY-e.targetTouches[1].clientY);
+const mid=e=>[(e.targetTouches[0].clientX+e.targetTouches[1].clientX)/2,(e.targetTouches[0].clientY+e.targetTouches[1].clientY)/2];
+const pct=(cx,cy)=>{const r=getVR(),vw=vid.videoWidth||1,vh=vid.videoHeight||1,k=Math.min(r.width/vw,r.height/vh),w=vw*k,h=vh*k,l=r.left+(r.width-w)/2,t=r.top+(r.height-h)/2;
+ return{x:Math.min(1,Math.max(0,(cx-l)/w)),y:Math.min(1,Math.max(0,(cy-t)/h))}};
+const flush=()=>{raf=0;if(pend){send({t:'abs',...pend});pend=null}};
+const mvTo=p=>{pend=p;if(!raf)raf=requestAnimationFrame(flush)};
+const cancelLP=()=>{clearTimeout(lp);lp=null};
+stage.addEventListener('touchstart',e=>{
+ if(e.targetTouches.length==2){cancelLP();mode=null;d0=dist(e);sc0=sc;m0=mid(e);acc2=0;return}
+ if(e.targetTouches.length==1&&mm!=='float'){const t=e.targetTouches[0];startP=lastXY=[t.clientX,t.clientY];dragged=false;gone=false;mode='one';
+  lp=setTimeout(()=>{lp=null;if(!dragged){gone=true;send(tp?{t:'click',b:'right',n:1}:{t:'click',...pct(startP[0],startP[1]),b:'right',n:1});navigator.vibrate?.(30)}},500)}
+},{passive:true});
+stage.addEventListener('touchmove',e=>{e.preventDefault();
+ if(e.targetTouches.length==2){cancelLP();const m=mid(e);
+  if(!mode||mode==='one'){const dd=Math.abs(dist(e)-d0),dm=Math.hypot(m[0]-m0[0],m[1]-m0[1]);mode=dd>25?'zoom':dm>8?'scroll':null;if(mode)m0=m;return}
+  if(mode==='zoom'){sc=Math.min(5,Math.max(1,sc0*dist(e)/d0));tx+=m[0]-m0[0];ty+=m[1]-m0[1];if(sc==1)tx=ty=0;ap()}
+  else{acc2+=(m[1]-m0[1])/10*SENS.s;const k=Math.trunc(acc2);if(k){send({t:'scroll',dy:k});acc2-=k}}
+  m0=m;return}
+ if(e.targetTouches.length==1&&mode==='one'){const t=e.targetTouches[0];
+  if(!dragged&&Math.hypot(t.clientX-startP[0],t.clientY-startP[1])<8)return;
+  dragged=true;cancelLP();if(tp){relAcc[0]+=(t.clientX-lastXY[0])*SENS.m;relAcc[1]+=(t.clientY-lastXY[1])*SENS.m;lastXY=[t.clientX,t.clientY];if(!raf2)raf2=requestAnimationFrame(()=>{raf2=0;const sx=Math.round(relAcc[0]),sy=Math.round(relAcc[1]);if(sx||sy)send({t:'rel',dx:sx,dy:sy});relAcc=[relAcc[0]-sx,relAcc[1]-sy]})}else mvTo(pct(t.clientX,t.clientY))}
+},{passive:false});
+stage.addEventListener('touchend',e=>{cancelLP();
+ if(mode==='one'&&!dragged&&!gone&&!e.targetTouches.length){const t=e.changedTouches[0];send(tp?{t:'click',b:'left',n:1}:{t:'click',...pct(t.clientX,t.clientY),b:'left',n:1})}
+ if(!e.targetTouches.length)mode=null});
+
+/* Teclado e atalhos */
+const mods=new Set(),kb=$('#kbin');
+const upd=()=>$$('[data-mod]').forEach(b=>b.classList.toggle('on',mods.has(b.dataset.mod)));
+const key=k=>{send({t:'combo',keys:[...mods,k]});mods.clear();upd()};
+$$('[data-key]').forEach(b=>b.onclick=()=>key(b.dataset.key));
+$$('[data-mod]').forEach(b=>b.onclick=()=>{const m=b.dataset.mod;mods.has(m)?mods.delete(m):mods.add(m);upd()});
+kb.addEventListener('focus',()=>kb.value='  ');
+kb.addEventListener('input',e=>{
+ if(e.inputType==='deleteContentBackward')key('backspace');
+ else if(e.data){mods.size?key(e.data.toLowerCase()):send({t:'type',text:e.data})}
+ kb.value='  '});
+const qk=$('#qk'),vv=window.visualViewport;
+const place=()=>{qk.style.bottom=(vv?Math.max(0,innerHeight-vv.height-vv.offsetTop):0)+'px'};
+kb.addEventListener('focus',()=>{qk.hidden=false;place()});kb.addEventListener('blur',()=>qk.hidden=true);
+vv&&vv.addEventListener('resize',place);vv&&vv.addEventListener('scroll',place);
+qk.addEventListener('mousedown',e=>e.preventDefault());
+$$('[data-combo]').forEach(b=>b.onclick=()=>send({t:'combo',keys:b.dataset.combo.split('+')}));
+$('#kbfloat').onclick=()=>{kb.blur();kb.focus()};
+kb.addEventListener('keydown',e=>{if(e.key==='Enter')key('enter')});
+
+/* Apps e atalhos do Windows */
+const APPL=[['notepad','Bloco de Notas'],['calc','Calculadora'],['explorer','Explorador'],['chrome','Chrome'],['edge','Edge'],['taskmgr','Gerenc. de Tarefas'],['paint','Paint'],['settings','Configurações']];
+const SYS=[['Fechar janela (Alt+F4)','alt+f4'],['Alternar janela (Alt+Tab)','alt+tab'],['Área de trabalho (Win+D)','win+d'],['Menu Iniciar (Win)','win'],['Gerenc. de Tarefas (Ctrl+Shift+Esc)','ctrl+shift+esc']];
+const ap2=$('#apps');
+APPL.forEach(([k,n])=>{const r=document.createElement('div');r.className='approw';r.innerHTML='<b>'+n+'</b><div><button>Abrir</button>'+(k==='explorer'||k==='settings'?'':'<button>Fechar</button>')+'</div>';
+ const bs=r.querySelectorAll('button');bs[0].onclick=()=>send({t:'open',app:k});if(bs[1])bs[1].onclick=()=>send({t:'kill',app:k});ap2.append(r)});
+SYS.forEach(([n,c])=>{const r=document.createElement('div');r.className='approw';r.innerHTML='<div><button>'+n+'</button></div>';r.querySelector('button').onclick=()=>send({t:'combo',keys:c.split('+')});ap2.append(r)});
+
+/* Controles personalizados (estilo PojavLauncher) */
+const NAME={'':'—','@kbd':'⌨ Teclado','@mouse':'🖱 Mouse flutuante',mouseL:'Mouse esquerdo',mouseR:'Mouse direito',wheelUp:'Rolar ↑',wheelDown:'Rolar ↓'};
+const OPTS=[...new Set(['','w','a','s','d','up','down','left','right','space','shift','ctrl','alt','win','tab','esc','enter','backspace','delete','home','end','pageup','pagedown',...'abcdefghijklmnopqrstuvwxyz'.split(''),...'0123456789'.split(''),...Array.from({length:12},(_,i)=>'f'+(i+1)),'mouseL','mouseR','wheelUp','wheelDown','@kbd','@mouse'])];
+const B=(label,keys,x,y,size,mode='hold')=>({t:'btn',label,keys,x,y,size,op:.85,mode});
+const DEFL=[{t:'stick',x:4,y:56,size:140,op:.85,dir:['w','a','s','d']},
+ B('PRI',['mouseL'],86,44,64),B('SEC',['mouseR'],75,54,64),B('Espaço',['space'],86,64,64),B('Shift',['shift'],75,74,56,'toggle'),B('E',['e'],64,64,52),B('F',['f'],64,78,52),
+ B('Esc',['esc'],3,14,44),B('Tab',['tab'],3,28,44),B('Ctrl',['ctrl'],3,42,44,'toggle'),B('⌨',['@kbd'],46,86,46),B('🖱',['@mouse'],56,86,46)];
+const clean=c=>{if(!c||!['btn','stick'].includes(c.t))return null;const n=v=>Number(v)||0;
+ const o={t:c.t,x:Math.min(96,Math.max(0,n(c.x))),y:Math.min(96,Math.max(0,n(c.y))),size:Math.min(200,Math.max(30,n(c.size)||60)),op:Math.min(1,Math.max(.2,n(c.op)||.85))};
+ if(c.t==='stick')o.dir=[0,1,2,3].map(i=>OPTS.includes(c.dir&&c.dir[i])?c.dir[i]:['w','a','s','d'][i]);
+ else{o.label=String(c.label||'').slice(0,8);o.keys=(Array.isArray(c.keys)?c.keys:[]).filter(k=>k&&OPTS.includes(k)).slice(0,4);o.mode=c.mode==='toggle'?'toggle':'hold'}
+ return o};
+let layout;try{layout=JSON.parse(localStorage.getItem('sc-layout')).map(clean).filter(Boolean)}catch(e){layout=null}
+if(!layout||!layout.length)layout=DEFL.map(clean);
+const saveL=()=>localStorage.setItem('sc-layout',JSON.stringify(layout));
+const press=(k,on)=>{
+ if(k==='wheelUp'||k==='wheelDown'){if(on)send({t:'scroll',dy:k==='wheelUp'?1:-1});return}
+ if(k==='@kbd'){if(on){kb.blur();kb.focus()}return}
+ if(k==='@mouse'){if(on)setMouseMode(mm==='float'?'touch':'float');return}
+ send({t:on?'down':'up',k})};
+const pressAll=(keys,on)=>(on?keys:[...keys].reverse()).forEach(k=>press(k,on));
+const gp=$('#gp');let editing=false;
+function bindBtn(el,c){let act=false;
+ el.addEventListener('pointerdown',e=>{if(editing)return;el.setPointerCapture(e.pointerId);
+  if(c.mode==='toggle'){act=!act;el.classList.toggle('on',act);pressAll(c.keys,act)}else{act=true;el.classList.add('on');pressAll(c.keys,true)}});
+ const up=()=>{if(editing||c.mode==='toggle'||!act)return;act=false;el.classList.remove('on');pressAll(c.keys,false)};
+ el.addEventListener('pointerup',up);el.addEventListener('pointercancel',up)}
+function bindStick(el,c){const knob=el.firstChild,d={};const set=(i,on)=>{if(!!d[i]!==on){d[i]=on;press(c.dir[i],on)}};
+ const mv=e=>{const r=el.getBoundingClientRect(),R=r.width/2;let x=e.clientX-r.left-R,y=e.clientY-r.top-R;const m=Math.hypot(x,y);if(m>R){x*=R/m;y*=R/m}
+  knob.style.transform=`translate(${x}px,${y}px)`;const T=R*.3;set(0,y<-T);set(2,y>T);set(1,x<-T);set(3,x>T)};
+ el.addEventListener('pointerdown',e=>{if(editing)return;el.setPointerCapture(e.pointerId);mv(e)});
+ el.addEventListener('pointermove',e=>{if(!editing&&el.hasPointerCapture(e.pointerId))mv(e)});
+ const up=()=>{knob.style.transform='';[0,1,2,3].forEach(i=>set(i,false))};
+ el.addEventListener('pointerup',up);el.addEventListener('pointercancel',up)}
+function bindEdit(el,c,i){let s=null;
+ el.addEventListener('pointerdown',e=>{if(!editing)return;e.preventDefault();el.setPointerCapture(e.pointerId);s={px:e.clientX,py:e.clientY,x:c.x,y:c.y,m:false}});
+ el.addEventListener('pointermove',e=>{if(!editing||!s)return;const r=gp.getBoundingClientRect(),dx=e.clientX-s.px,dy=e.clientY-s.py;if(Math.hypot(dx,dy)>5)s.m=true;
+  if(s.m){c.x=Math.min(96,Math.max(0,s.x+dx/r.width*100));c.y=Math.min(96,Math.max(0,s.y+dy/r.height*100));el.style.left=c.x+'%';el.style.top=c.y+'%'}});
+ el.addEventListener('pointerup',()=>{if(!editing||!s)return;const moved=s.m;s=null;saveL();if(!moved)editDlg(i)});
+ el.addEventListener('pointercancel',()=>{s=null})}
+function render(){gp.innerHTML='';layout.forEach((c,i)=>{const el=document.createElement('div');el.className='cc '+c.t;
+ el.style.cssText=`left:${c.x}%;top:${c.y}%;width:${c.size}px;height:${c.size}px;opacity:${c.op}`;
+ if(c.t==='stick'){el.innerHTML='<i class="knob"></i>';bindStick(el,c)}
+ else{el.textContent=c.label||NAME[c.keys[0]]||c.keys[0]||'?';el.style.fontSize=Math.max(10,c.size/5)+'px';bindBtn(el,c)}
+ bindEdit(el,c,i);gp.append(el)})}
+function editDlg(i){const c=layout[i],d=$('#cfgd');d.innerHTML='<h3>Editar controle</h3>';
+ const row=(t,n)=>{const l=document.createElement('label');l.append(t,n);d.append(l)};
+ const sel=(v,set,list=OPTS,nm=NAME)=>{const s=document.createElement('select');list.forEach(o=>s.add(new Option(nm[o]||o,o,false,o===v)));s.onchange=()=>set(s.value);return s};
+ const rng=(min,max,step,v,set)=>{const r=document.createElement('input');r.type='range';r.min=min;r.max=max;r.step=step;r.value=v;r.oninput=()=>set(+r.value);return r};
+ if(c.t==='btn'){const t=document.createElement('input');t.type='text';t.maxLength=8;t.value=c.label;t.oninput=()=>c.label=t.value;row('Nome',t);
+  for(let k=0;k<4;k++)row('Tecla '+(k+1),sel(c.keys[k]||'',v=>{c.keys[k]=v}));
+  row('Modo',sel(c.mode,v=>c.mode=v,['hold','toggle'],{hold:'Segurar',toggle:'Alternar (liga/desliga)'}))}
+ else['Cima','Esquerda','Baixo','Direita'].forEach((n,k)=>row(n,sel(c.dir[k],v=>{c.dir[k]=v})));
+ row('Tamanho',rng(30,200,2,c.size,v=>c.size=v));row('Transparência',rng(.2,1,.05,c.op,v=>c.op=v));
+ const bx=document.createElement('div');const mk=(t,f)=>{const x=document.createElement('button');x.textContent=t;x.onclick=f;bx.append(x)};
+ mk('Excluir',()=>{layout.splice(i,1);d.close()});mk('OK',()=>d.close());d.append(bx);
+ d.onclose=()=>{if(c.keys)c.keys=c.keys.filter(Boolean);saveL();render()};d.showModal()}
+function toggleEdit(on){editing=on;gp.classList.toggle('edit',on);$('#ebar').hidden=!on;if(on){gp.hidden=false;$('#bgp').classList.add('on')}}
+$('#cfg').onclick=()=>toggleEdit(!editing);$('#edone').onclick=()=>toggleEdit(false);
+$('#eadd').onclick=()=>{layout.push(clean(B('Novo',['space'],40,40,60)));saveL();render()};
+$('#erst').onclick=()=>{if(confirm('Restaurar o layout padrão?')){layout=DEFL.map(clean);saveL();render()}};
+$('#eexp').onclick=()=>{const txt=JSON.stringify({v:1,controls:layout},null,1);try{navigator.clipboard.writeText(txt)}catch(e){}
+ const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([txt],{type:'application/json'}));a.download='starcontrol-layout.json';document.body.append(a);a.click();a.remove();alert('Layout exportado: arquivo baixado e copiado.')};
+$('#eimp').onclick=()=>$('#imp').click();
+$('#imp').onchange=async e=>{try{const j=JSON.parse(await e.target.files[0].text());const arr=(Array.isArray(j)?j:j.controls).map(clean).filter(Boolean);if(!arr.length)throw 0;layout=arr;saveL();render()}catch(x){alert('Arquivo de layout inválido.')}e.target.value=''};
+$('#bsnd').onclick=()=>setSound($('#vid').muted);
+$('#bgp').onclick=e=>{gp.hidden=!gp.hidden;e.currentTarget.classList.toggle('on',!gp.hidden)};
+
+/* Mouse: flutuante, arrastar e tocar, trackpad */
+let mm='touch';const SENS={m:1.8,s:1};const fm=$('#fm');
+try{const p=JSON.parse(localStorage.getItem('sc-mouse'));if(p){mm=['float','touch','pad'].includes(p.mm)?p.mm:'touch';SENS.m=+p.m||1.8;SENS.s=+p.s||1}}catch(e){}
+const MML={float:'🖱 Mouse',touch:'👆 Toque',pad:'🖐 Trackpad'};
+const saveM=()=>localStorage.setItem('sc-mouse',JSON.stringify({mm,m:SENS.m,s:SENS.s}));
+function setMouseMode(m){mm=m;tp=(m==='pad');fm.hidden=(m!=='float');$('#bmode').textContent=MML[m];
+ $$('#mset .opt').forEach(o=>{const on=o.dataset.m===m;o.classList.toggle('sel',on);o.querySelector('input').checked=on});saveM()}
+$$('#mset .opt').forEach(o=>o.addEventListener('click',()=>setMouseMode(o.dataset.m)));
+$('#bmode').onclick=()=>{const l=['float','touch','pad'];setMouseMode(l[(l.indexOf(mm)+1)%3])};
+$('#sm').value=SENS.m;$('#ss').value=SENS.s;$('#sm').oninput=e=>{SENS.m=+e.target.value;saveM()};$('#ss').oninput=e=>{SENS.s=+e.target.value;saveM()};
+try{const p=JSON.parse(localStorage.getItem('sc-fm'));if(p){fm.style.left=p.l+'%';fm.style.top=p.t+'%'}}catch(e){}
+const fmBtn=(el,k)=>{el.addEventListener('pointerdown',e=>{el.setPointerCapture(e.pointerId);el.classList.add('on');press(k,true)});
+ const up=()=>{if(el.classList.contains('on')){el.classList.remove('on');press(k,false)}};el.addEventListener('pointerup',up);el.addEventListener('pointercancel',up)};
+fmBtn($('#fml'),'mouseL');fmBtn($('#fmr'),'mouseR');
+const fh=$('#fmh');let hs=null;
+fh.addEventListener('pointerdown',e=>{fh.setPointerCapture(e.pointerId);const r=$('#tab-live').getBoundingClientRect(),b=fm.getBoundingClientRect();hs={dx:e.clientX-b.left,dy:e.clientY-b.top,r}});
+fh.addEventListener('pointermove',e=>{if(!hs)return;const l=Math.min(86,Math.max(0,(e.clientX-hs.dx-hs.r.left)/hs.r.width*100)),t=Math.min(60,Math.max(0,(e.clientY-hs.dy-hs.r.top)/hs.r.height*100));fm.style.left=l+'%';fm.style.top=t+'%';hs.l=l;hs.t=t});
+fh.addEventListener('pointerup',()=>{if(hs&&hs.l!=null)localStorage.setItem('sc-fm',JSON.stringify({l:hs.l,t:hs.t}));hs=null});
+const ball=$('#fmball');let bl=null,bacc=0;
+ball.addEventListener('pointerdown',e=>{ball.setPointerCapture(e.pointerId);bl=e.clientY;bacc=0});
+ball.addEventListener('pointermove',e=>{if(bl==null)return;bacc+=(e.clientY-bl)/10*SENS.s;bl=e.clientY;const k=Math.trunc(bacc);if(k){send({t:'scroll',dy:k});bacc-=k}});
+ball.addEventListener('pointerup',()=>{bl=null});ball.addEventListener('pointercancel',()=>{bl=null});
+const fpad=$('#fmpad');let fp=null;
+fpad.addEventListener('pointerdown',e=>{fpad.setPointerCapture(e.pointerId);fp={x:e.clientX,y:e.clientY,mv:0,t:Date.now()}});
+fpad.addEventListener('pointermove',e=>{if(!fp)return;const dx=e.clientX-fp.x,dy=e.clientY-fp.y;fp.x=e.clientX;fp.y=e.clientY;fp.mv+=Math.abs(dx)+Math.abs(dy);
+ relAcc[0]+=dx*SENS.m;relAcc[1]+=dy*SENS.m;if(!raf2)raf2=requestAnimationFrame(()=>{raf2=0;const sx=Math.round(relAcc[0]),sy=Math.round(relAcc[1]);if(sx||sy)send({t:'rel',dx:sx,dy:sy});relAcc=[relAcc[0]-sx,relAcc[1]-sy]})});
+fpad.addEventListener('pointerup',()=>{if(fp&&fp.mv<8&&Date.now()-fp.t<300)send({t:'click',b:'left',n:1});fp=null});
+fpad.addEventListener('pointercancel',()=>{fp=null});
+/* Menu */
+const menu=$('#menu');
+const page=n=>$$('#menu .pg').forEach(p=>p.hidden=p.dataset.p!==n);
+$('#mbtn').onclick=()=>{menu.hidden=!menu.hidden;if(!menu.hidden)page('main')};
+$$('#menu [data-go]').forEach(b=>b.onclick=()=>page(b.dataset.go));
+$$('#menu [data-back]').forEach(b=>b.onclick=()=>page('main'));
+['kbfloat','cfg'].forEach(id=>$('#'+id).addEventListener('click',()=>{menu.hidden=true}));
+stage.addEventListener('touchstart',()=>{menu.hidden=true},{passive:true});
+$$('#menu [data-hud]').forEach(i=>{i.checked=!!HUDS[i.dataset.hud];i.onchange=()=>{HUDS[i.dataset.hud]=i.checked;localStorage.setItem('sc-hud',JSON.stringify(HUDS));sendWant();drawHud()}});
+render();setMouseMode(mm);drawHud();
+
+/* Início */
+if(isMobile){$('#pc-panel').hidden=true;$('#phone-panel').hidden=false;
+ const p=new URLSearchParams(location.search).get('c');if(p){$('#codein').value=p;go(p)}}
+else pcMode();
+</script></body></html>
