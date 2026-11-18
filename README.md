@@ -24,14 +24,6 @@ assets/           logo, favicon e ícones do app
 - Aba "Tela ao Vivo": botões estilo PojavLauncher sobre a tela. "✏️ Controles" edita (arrastar, tocar para editar tecla/combo de até 4 teclas, modo segurar/alternar, tamanho, transparência), exporta e importa layouts .json.
 - Aba "Mouse": escolha entre mouse flutuante (botões esquerdo/direito e bolinha de rolagem), arrastar e tocar, ou trackpad.
 
-## Segurança
-- Código de pareamento de 8 caracteres (≈40 bits), gerado com crypto.getRandomValues, de uso único: ao desconectar ou revogar, um código novo é criado. Expira em 10 minutos se não for usado.
-- Aprovação manual no PC (mostra o dispositivo), 1 controlador por vez, bloqueio de 60 s após 3 recusas.
-- Agente: só aceita o painel local (http://localhost:8766) com token secreto aleatório a cada execução, limites de tamanho e de taxa de comandos, lista fixa de apps, sem shell.
-- Pausa de emergência no PC: Ctrl+Alt+F12 bloqueia/libera o controle remoto. Fechar a janela preta encerra tudo.
-- O vídeo/áudio e os comandos vão por WebRTC (criptografado). Só o pareamento passa pelo servidor público do PeerJS.
-- Opcional: hospedar peerjs e qrcode-generator na pasta assets/ ou adicionar integrity (SRI) nas tags de script do index.html, para não depender do CDN.
-
 ## Somente rede local
 - O WebRTC é configurado sem servidores STUN/TURN: só candidatos da rede local são usados, então um aparelho em outra internet não consegue abrir a conexão.
 - Além disso, o PC confere o endereço do aparelho e recusa qualquer um que não seja da rede local (IP privado/link-local ou .local).
