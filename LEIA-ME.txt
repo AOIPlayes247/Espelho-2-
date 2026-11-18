@@ -1,0 +1,24 @@
+KIT DO INSTALADOR DO STARCONTROL PC
+
+Cria o aplicativo StarControl-PC.exe e, se o Inno Setup estiver instalado, o instalador StarControl-Setup.exe
+(atalho no menu Iniciar, atalho opcional na área de trabalho, início com o Windows opcional e desinstalador).
+
+O QUE VOCE PRECISA (uma vez, no Windows)
+1. Python 3.10 a 3.12 (python.org, marque "Add Python to PATH").
+2. Inno Setup 6 (jrsoftware.org/isinfo.php) - opcional, só para gerar o instalador.
+
+PASSO A PASSO
+1. No site do StarControl, clique em "Baixar Launcher para PC" e guarde o agent.py nesta pasta (ele leva uma cópia do site e o endereço dele).
+2. Dê dois cliques em build.bat e espere (a primeira vez baixa as dependências).
+3. Pegue o resultado:
+   - dist\StarControl-PC.exe  (aplicativo único, não precisa de Python no PC onde for usado)
+   - Output\StarControl-Setup.exe  (instalador)
+
+COMO O APP FUNCIONA
+- Roda sem janela preta: ícone perto do relógio com "Abrir painel", "Pausar controle" e "Sair".
+- Log de erros: %LOCALAPPDATA%\StarControl\agent.log
+- Pausa de emergência: Ctrl+Alt+F12.
+
+AVISOS
+- O .exe não é assinado digitalmente: o Windows pode mostrar "Windows protegeu o computador" (Mais informações > Executar assim mesmo) e alguns antivírus marcam programas feitos com PyInstaller que simulam mouse e teclado. Isso é comum; um certificado de assinatura de código resolve, mas é pago.
+- O app leva uma cópia do site: se você mudar o site, baixe o agent.py de novo e rode build.bat de novo.
